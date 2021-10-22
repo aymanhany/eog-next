@@ -12,16 +12,74 @@ import Tab from 'react-bootstrap/Tab';
 
 // import Loading from './Loading';
 
-export const getStaticProps = async () => {
-    
+export const getStaticProps = async (ctx) => {
+
+	// useEffect(() => {
+	// 	setPageNumber(1);
+	// 	setData([]);
+	// 	fetchData(1);
+	// 	console.log('fetching first');
+	// 	setLoading(true);
+	// 	setHasMore(true);
+	// }, [match.params]);
+
+	await axios
+		.get('https://egyptoil-gas.com/wp-json/wp/v2/news_region')
+		.then((res) => {
+			setCats(res.data);
+			res.data.map((slug) => {
+				axios
+					.get(
+						`https://egyptoil-gas.com/wp-json/wp/v2/news?filter[news_region]=${slug.slug}`,
+						{
+							params: {
+								per_page: 4
+							},
+						}
+					)
+					.then((res) => {
+						if (res.status === 400) {
+							setLoading(false);
+							setHasMore(false);
+							return;
+						}
+
+						setData((prev) => [...prev, ...res.data]);
+						console.log(data);
+
+						if (data.length === 0) {
+							console.log('false');
+							setHasMore(false);
+						} else {
+							console.log('true');
+							setHasMore(res.data.length > 0);
+						}
+
+						setLoading(false);
+					})
+					.catch((err) => {
+						if (err.response.status === 400) {
+							setLoading(false);
+							setHasMore(false);
+						}
+					});
+			});
+		});
+
+	return {
+		props: {
+			data: fetchData()
+		}
+	}
 }
+
 function News({ match }) {
 	const [data, setData] = useState([]);
 	const [cats, setCats] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [hasMore, setHasMore] = useState(true);
 	const [pageNumber, setPageNumber] = useState(1);
-// 	const routerLocation = useLocation();
+	// 	const routerLocation = useLocation();
 	const lastEl = useRef();
 
 	const type = match.params.type;
@@ -41,14 +99,7 @@ function News({ match }) {
 		[loading, hasMore]
 	);
 
-	useEffect(() => {
-		setPageNumber(1);
-		setData([]);
-		fetchData(1);
-		console.log('fetching first');
-		setLoading(true);
-		setHasMore(true);
-	}, [match.params]);
+
 
 	// useEffect(() => {
 	// 	if (pageNumber === 1) return;
